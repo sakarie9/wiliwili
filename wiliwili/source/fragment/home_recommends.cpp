@@ -70,6 +70,9 @@ public:
         bool skip = false;
         for (const auto& i : data) {
             skip = false;
+            if (i.business_info.is_ad || i.business_info.is_ad_video) {
+                skip = true;
+            }
             for (const auto& j : this->recommendList) {
                 if (j.cid == i.cid) {
                     skip = true;
