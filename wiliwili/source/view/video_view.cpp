@@ -253,7 +253,7 @@ VideoView::VideoView() {
                 }
             case OsdGestureType::RIGHT_VERTICAL_PAN_UPDATE:
                 if (is_osd_lock) break;
-                this->requestVolume(this->volume_init + status.deltaY * 100);
+                this->requestVolume(this->volume_init + status.deltaY * 200);
                 break;
             case OsdGestureType::LEFT_VERTICAL_PAN_CANCEL:
             case OsdGestureType::LEFT_VERTICAL_PAN_END:
@@ -385,8 +385,8 @@ VideoView::VideoView() {
         slider->setMargins(8, 16, 8, 16);
         slider->setWidth(300);
         slider->setHeight(40);
-        slider->setProgress(MPVCore::instance().getVolume() * 1.0 / 100);
-        slider->getProgressEvent()->subscribe([](float progress) { MPVCore::instance().setVolume(progress * 100); });
+        slider->setProgress(MPVCore::instance().getVolume() * 1.0 / 200);
+        slider->getProgressEvent()->subscribe([](float progress) { MPVCore::instance().setVolume(progress * 200); });
         sliderBox->addView(slider);
         container->addView(sliderBox);
         auto frame = new brls::AppletFrame(container);
@@ -507,7 +507,7 @@ VideoView::VideoView() {
 
 void VideoView::requestVolume(int volume, int delay) {
     if (volume < 0) volume = 0;
-    if (volume > 100) volume = 100;
+    if (volume > 200) volume = 200;
     MPVCore::instance().setVolume(volume);
     setCenterHintText(fmt::format("{} %", volume));
     if (delay == 0) return;
