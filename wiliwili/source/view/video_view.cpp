@@ -2,6 +2,7 @@
 // Created by fang on 2022/4/23.
 //
 
+#include <algorithm>
 #include <limits>
 #include <cmath>
 
@@ -44,6 +45,47 @@ static int getSeekRange(int current) {
     if (current <= 300) return 30;
     if (current <= 1200) return 60;
     return current / 20;
+}
+
+static int getGestureVolume(int initVolume, float deltaY) {
+    // 将竖向手势位移映射到音量：
+    // - 输入 deltaY：通常在 [-1, 1]（不同设备/手势库可能略超出）
+    // - 输出 volume：限制在 [VIDEO_VOLUME_MIN, VIDEO_VOLUME_MAX]
+    // 设计目标：
+    // 1) 100 附近容易“停住”；2) 大幅滑动仍可快速到边界。
+    float n = std::clamp(deltaY, -1.0f, 1.0f);
+    float a = fabs(n);
+
+    // 连续分段曲线（分段但不断点）：
+    // - [0, SPLIT]：低斜率细调，避免轻微手抖导致音量大跳
+    // - (SPLIT, 1]：高斜率快调，保证长滑仍然高效
+    // 可调参数：
+    // - SPLIT 越大：细调区越宽
+    // - SLOW  越小：细调越“稳”
+    // - FAST  越大：大幅滑动越“快”
+    constexpr float SPLIT = 0.35f;
+    constexpr float SLOW  = 120.0f;
+    const float FAST      = (float)MPVCore::VIDEO_VOLUME_MAX;
+
+    float magnitude = 0.0f;
+    if (a <= SPLIT) {
+        magnitude = a * SLOW;
+    } else {
+        magnitude = SPLIT * SLOW + (a - SPLIT) * (FAST - SPLIT * SLOW) / (1.0f - SPLIT);
+    }
+
+    int volume = initVolume + (n >= 0 ? 1 : -1) * (int)std::lround(magnitude);
+
+    // 100% 附近吸附（磁吸）
+    // 在 ±2 范围内自动归到 100，方便用户快速回到“标准音量”。
+    // 这个窗口不宜过大，否则会产生“拉不动离开 100”的违和感。
+    if (abs(volume - 100) <= 2) {
+        volume = 100;
+    }
+
+    if (volume < MPVCore::VIDEO_VOLUME_MIN) volume = MPVCore::VIDEO_VOLUME_MIN;
+    if (volume > MPVCore::VIDEO_VOLUME_MAX) volume = MPVCore::VIDEO_VOLUME_MAX;
+    return volume;
 }
 
 #define CHECK_OSD(shake)                                                              \
@@ -263,7 +305,9 @@ VideoView::VideoView() {
                 }
             case OsdGestureType::RIGHT_VERTICAL_PAN_UPDATE:
                 if (is_osd_lock) break;
-                this->requestVolume(this->volume_init + status.deltaY * 100);
+                // 使用自适应映射替代线性 deltaY * VIDEO_VOLUME_MAX：
+                // 中段更细腻，两端更迅速，并在 100 附近更易停靠。
+                this->requestVolume(getGestureVolume(this->volume_init, status.deltaY));
                 break;
             case OsdGestureType::LEFT_VERTICAL_PAN_CANCEL:
             case OsdGestureType::LEFT_VERTICAL_PAN_END:
@@ -395,8 +439,9 @@ VideoView::VideoView() {
         slider->setMargins(8, 16, 8, 16);
         slider->setWidth(300);
         slider->setHeight(40);
-        slider->setProgress(MPVCore::instance().getVolume() * 1.0 / 100);
-        slider->getProgressEvent()->subscribe([](float progress) { MPVCore::instance().setVolume(progress * 100); });
+        slider->setProgress(MPVCore::instance().getVolume() * 1.0 / MPVCore::VIDEO_VOLUME_MAX);
+        slider->getProgressEvent()->subscribe(
+            [](float progress) { MPVCore::instance().setVolume(progress * MPVCore::VIDEO_VOLUME_MAX); });
         sliderBox->addView(slider);
         container->addView(sliderBox);
         auto frame = new brls::AppletFrame(container);
@@ -530,8 +575,8 @@ VideoView::VideoView() {
 }
 
 void VideoView::requestVolume(int volume, int delay) {
-    if (volume < 0) volume = 0;
-    if (volume > 100) volume = 100;
+    if (volume < MPVCore::VIDEO_VOLUME_MIN) volume = MPVCore::VIDEO_VOLUME_MIN;
+    if (volume > MPVCore::VIDEO_VOLUME_MAX) volume = MPVCore::VIDEO_VOLUME_MAX;
     MPVCore::instance().setVolume(volume);
     setCenterHintText(fmt::format("{} %", volume));
     if (delay == 0) return;
