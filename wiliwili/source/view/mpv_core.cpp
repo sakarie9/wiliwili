@@ -1184,7 +1184,7 @@ void MPVCore::setUrl(const std::string &url, const std::string &extra, const std
 void MPVCore::setBackupUrl(const std::string &url, const std::string &extra) { this->setUrl(url, extra, "append"); }
 
 void MPVCore::setVolume(int64_t value) {
-    if (value < 0 || value > 100) return;
+    if (value < MPVCore::VIDEO_VOLUME_MIN || value > MPVCore::VIDEO_VOLUME_MAX) return;
     command_async("set", "volume", value);
     MPVCore::VIDEO_VOLUME = (int)value;
 }
