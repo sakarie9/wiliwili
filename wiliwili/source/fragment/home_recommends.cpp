@@ -69,6 +69,9 @@ public:
         brls::Logger::debug("DataSourceRecommendVideoList: append data");
         bool skip = false;
         for (const auto& i : data) {
+            if (i.business_info.is_ad || i.business_info.is_ad_video) {
+                continue;
+            }
             skip = false;
             for (const auto& j : this->recommendList) {
                 if (j.cid == i.cid) {
@@ -117,15 +120,21 @@ void HomeRecommends::onRecommendVideoList(const bilibili::RecommendVideoListResu
     bilibili::RecommendVideoListResultWrapper result;
     result.requestIndex = originalResult.requestIndex;
     result.item.resize(originalResult.item.size());
-    if (ProgramConfig::instance().upFilter.empty()) {
-        std::copy(originalResult.item.begin(), originalResult.item.end(), result.item.begin());
-    } else {
-        auto it = std::copy_if(originalResult.item.begin(), originalResult.item.end(), result.item.begin(),
-                               [](const bilibili::RecommendVideoResult& r) {
-                                   return !ProgramConfig::instance().upFilter.count(r.owner.mid);
-                               });
-        result.item.resize(std::distance(result.item.begin(), it));
-    }
+    const auto& upFilter = ProgramConfig::instance().upFilter;
+    // 同时过滤广告与 up 主：首屏也必须过滤广告，否则会显示出来
+    auto it = std::copy_if(
+        originalResult.item.begin(), originalResult.item.end(), result.item.begin(),
+        [&upFilter](const bilibili::RecommendVideoResult& r) {
+            // 过滤广告与推广视频
+            if (r.business_info.is_ad || r.business_info.is_ad_video)
+                return false;
+            // 过滤被屏蔽的 up 主（仅当配置非空时）
+            if (!upFilter.empty() && upFilter.count(r.owner.mid))
+                return false;
+            return true;
+        }
+    );
+    result.item.resize(std::distance(result.item.begin(), it));
 
     brls::Threading::sync([this, result]() {
         auto* datasource = dynamic_cast<DataSourceRecommendVideoList*>(recyclingGrid->getDataSource());
