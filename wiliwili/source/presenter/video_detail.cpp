@@ -13,6 +13,7 @@
 #include "view/subtitle_core.hpp"
 #include "view/video_view.hpp"
 #include "view/mpv_core.hpp"
+#include "bilibili/result/mine_later_result.h"
 #include "bilibili/result/mine_collection_result.h"
 #include "view/video_snapshot_core.hpp"
 
@@ -388,6 +389,7 @@ void VideoDetail::changeEpisode(const bilibili::SeasonEpisodeResult& i) {
     this->requestSeasonVideoUrl(i.bvid, i.cid);
     this->requestVideoComment(std::to_string(i.aid), 0, 3);
     this->requestVideoRelationInfo(i.id);
+    this->requestWatchLaterStatus(i.aid);
     GA("season_video", {{"bvid", i.bvid}})
 }
 
@@ -691,6 +693,79 @@ void VideoDetail::addResource(uint64_t aid, int type, bool isFavorite, std::stri
                 this->onVideoRelationInfo(videoRelation);
             });
         });
+}
+
+/// 获取稍后观看状态
+void VideoDetail::requestWatchLaterStatus(uint64_t aid) {
+    brls::Logger::debug("requestWatchLaterStatus: aid={}", aid);
+    ASYNC_RETAIN
+    BILI::getWatchLater(
+        [ASYNC_TOKEN, aid](const bilibili::WatchLaterListWrapper& result) {
+            brls::sync([ASYNC_TOKEN, aid, result]() {
+                ASYNC_RELEASE
+                bool found = false;
+                for (const auto& item : result.list) {
+                    if (item.aid == aid) {
+                        found = true;
+                        break;
+                    }
+                }
+                watchLater = found;
+                this->onWatchLaterStatus(found);
+            });
+        },
+        [ASYNC_TOKEN](BILI_ERR) {
+            ASYNC_RELEASE
+            brls::Logger::error("requestWatchLaterStatus: {}", error);
+        });
+}
+
+/// 切换稍后观看状态
+void VideoDetail::toggleWatchLater(uint64_t aid) {
+    std::string csrf = ProgramConfig::instance().getCSRF();
+    if (csrf.empty()) return;
+
+    bool newState = !watchLater;
+
+    // 乐观更新 UI
+    watchLater = newState;
+    this->onWatchLaterStatus(newState);
+
+    brls::Logger::debug("toggleWatchLater: aid={} newState={}", aid, newState);
+    ASYNC_RETAIN
+    if (newState) {
+        BILI::addWatchLater(
+            aid, csrf,
+            [ASYNC_TOKEN]() {
+                ASYNC_RELEASE
+                brls::Logger::debug("addWatchLater: success");
+            },
+            [ASYNC_TOKEN](BILI_ERR) {
+                brls::Logger::error("addWatchLater: {}", error);
+                brls::sync([ASYNC_TOKEN, error]() {
+                    brls::Application::notify(error);
+                    ASYNC_RELEASE
+                    watchLater = !watchLater;
+                    this->onWatchLaterStatus(watchLater);
+                });
+            });
+    } else {
+        BILI::deleteWatchLater(
+            aid, csrf,
+            [ASYNC_TOKEN]() {
+                ASYNC_RELEASE
+                brls::Logger::debug("deleteWatchLater: success");
+            },
+            [ASYNC_TOKEN](BILI_ERR) {
+                brls::Logger::error("deleteWatchLater: {}", error);
+                brls::sync([ASYNC_TOKEN, error]() {
+                    brls::Application::notify(error);
+                    ASYNC_RELEASE
+                    watchLater = !watchLater;
+                    this->onWatchLaterStatus(watchLater);
+                });
+            });
+    }
 }
 
 void VideoDetail::requestHighlightProgress(uint64_t cid) {

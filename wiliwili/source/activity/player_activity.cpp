@@ -17,7 +17,6 @@
 #include "fragment/player_collection.hpp"
 #include "fragment/player_fragments.hpp"
 #include "fragment/player_evaluate.hpp"
-#include "fragment/share_dialog.hpp"
 #include "view/grid_dropdown.hpp"
 #include "view/svg_image.hpp"
 #include "view/video_view.hpp"
@@ -181,15 +180,10 @@ void PlayerActivity::onContentAvailable() {
         return true;
     });
 
-    // 二维码按钮
-    this->btnQR->getParent()->registerClickAction([this](...) {
-        auto dialog = new ShareDialog();
-#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
-        dialog->open(fmt::format("https://www.bilibili.com/video/{}/", videoDetailResult.bvid), videoDetailResult.title,
-                     videoDetailResult.desc, videoDetailResult.pic, videoDetailResult.owner.name);
-#else
-        dialog->open("https://www.bilibili.com/video/" + this->videoDetailResult.bvid);
-#endif
+    // 稍后观看按钮
+    this->btnLater->getParent()->registerClickAction([this](...) {
+        if (!DialogHelper::checkLogin()) return true;
+        this->toggleWatchLater(this->videoDetailResult.aid);
         return true;
     });
 
@@ -240,7 +234,10 @@ void PlayerActivity::onVideoInfo(const bilibili::VideoDetailResult& result) {
     this->labelAgree->setText(wiliwili::num2w(result.stat.like));
     this->labelCoin->setText(wiliwili::num2w(result.stat.coin));
     this->labelFavorite->setText(wiliwili::num2w(result.stat.favorite));
-    this->labelQR->setText(wiliwili::num2w(result.stat.share));
+    this->labelLater->setText("wiliwili/player/later"_i18n);
+
+    // 请求稍后观看状态
+    this->requestWatchLaterStatus(result.aid);
 }
 
 void PlayerActivity::onUpInfo(const bilibili::UserDetailResultWrapper& user) {

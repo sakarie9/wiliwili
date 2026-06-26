@@ -169,13 +169,13 @@
                                 alignItems="center"
                                 focusable="true">
                             <SVGImage
-                                    id="video/btn/qr"
+                                    id="video/btn/later"
                                     positionTop="4"
                                     width="40"
                                     height="40"
-                                    SVG="@res/svg/bpx-svg-sprite-share.svg"/>
+                                    SVG="@res/svg/bpx-svg-sprite-later.svg"/>
                             <brls:Label
-                                    id="video/label/qr"
+                                    id="video/label/later"
                                     positionType="absolute"
                                     positionBottom="-30"
                                     culled="false"

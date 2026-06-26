@@ -257,6 +257,26 @@ void BilibiliClient::getWatchLater(const std::function<void(WatchLaterListWrappe
     HTTP::getResultAsync<WatchLaterListWrapper>(Api::WatchLater, {}, callback, error);
 }
 
+// add video to watch later
+void BilibiliClient::addWatchLater(uint64_t aid, const std::string& csrf,
+                                   const std::function<void()>& callback, const ErrorCallback& error) {
+    cpr::Payload payload = {
+        {"aid", std::to_string(aid)},
+        {"csrf", csrf},
+    };
+    HTTP::postResultAsync(Api::WatchLaterAdd, {}, payload, callback, error);
+}
+
+// delete video from watch later
+void BilibiliClient::deleteWatchLater(uint64_t aid, const std::string& csrf,
+                                      const std::function<void()>& callback, const ErrorCallback& error) {
+    cpr::Payload payload = {
+        {"aid", std::to_string(aid)},
+        {"csrf", csrf},
+    };
+    HTTP::postResultAsync(Api::WatchLaterDel, {}, payload, callback, error);
+}
+
 //
 //static void getWatchLater(
 //    const std::function<void(WatchLaterList)>& callback = nullptr,

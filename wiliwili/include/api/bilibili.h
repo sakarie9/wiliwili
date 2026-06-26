@@ -189,6 +189,10 @@ public:
     // 稍后再看 watch later
     static void getWatchLater(const std::function<void(WatchLaterListWrapper)>& callback = nullptr,
                               const ErrorCallback& error                                 = nullptr);
+    static void addWatchLater(uint64_t aid, const std::string& csrf,
+                              const std::function<void()>& callback = nullptr, const ErrorCallback& error = nullptr);
+    static void deleteWatchLater(uint64_t aid, const std::string& csrf,
+                                 const std::function<void()>& callback = nullptr, const ErrorCallback& error = nullptr);
 
     /**
      * 获取用户创建的收藏列表或用户订阅的合集

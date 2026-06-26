@@ -273,7 +273,7 @@ void BasePlayerActivity::setCommonData() {
                              return true;
                          });
 
-    this->btnQR->getParent()->addGestureRecognizer(new brls::TapGestureRecognizer(this->btnQR->getParent()));
+    this->btnLater->getParent()->addGestureRecognizer(new brls::TapGestureRecognizer(this->btnLater->getParent()));
 
     this->btnAgree->getParent()->addGestureRecognizer(new brls::TapGestureRecognizer(this->btnAgree->getParent()));
 
@@ -285,6 +285,7 @@ void BasePlayerActivity::setCommonData() {
     this->videoUserInfo->addGestureRecognizer(new brls::TapGestureRecognizer(this->videoUserInfo));
 
     this->setRelationButton(false, false, false);
+    this->setWatchLaterButton(false);
 
     eventSubscribeID = MPV_E->subscribe([this](MpvEventEnum event) {
         // 上一次报告历史记录的时间点
@@ -776,6 +777,11 @@ void BasePlayerActivity::onVideoRelationInfo(const bilibili::VideoRelation& resu
     this->setRelationButton(result.like, result.coin, result.favorite);
 }
 
+void BasePlayerActivity::onWatchLaterStatus(bool inWatchLater) {
+    brls::Logger::debug("onWatchLaterStatus: {}", inWatchLater);
+    this->setWatchLaterButton(inWatchLater);
+}
+
 void BasePlayerActivity::onHighlightProgress(const bilibili::VideoHighlightProgress& result) {
     brls::Logger::debug("highlight: {}/{}", result.step_sec, result.data.size());
     VideoHighlightData data{result.step_sec, result.data};
@@ -797,6 +803,14 @@ void BasePlayerActivity::setRelationButton(bool liked, bool coin, bool favorite)
         btnFavorite->setImageFromSVGRes("svg/bpx-svg-sprite-collection-active.svg");
     } else {
         btnFavorite->setImageFromSVGRes("svg/bpx-svg-sprite-collection.svg");
+    }
+}
+
+void BasePlayerActivity::setWatchLaterButton(bool inWatchLater) {
+    if (inWatchLater) {
+        btnLater->setImageFromSVGRes("svg/bpx-svg-sprite-later-active.svg");
+    } else {
+        btnLater->setImageFromSVGRes("svg/bpx-svg-sprite-later.svg");
     }
 }
 
