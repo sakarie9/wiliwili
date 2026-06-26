@@ -11,7 +11,6 @@
 #include "fragment/player_collection.hpp"
 #include "fragment/player_fragments.hpp"
 #include "fragment/season_evaluate.hpp"
-#include "fragment/share_dialog.hpp"
 #include "utils/config_helper.hpp"
 #include "utils/dialog_helper.hpp"
 #include "utils/number_helper.hpp"
@@ -111,15 +110,10 @@ void PlayerSeasonActivity::onContentAvailable() {
         if (this->episodeResult.aid != 0) this->requestVideoComment(std::to_string(this->episodeResult.aid));
     });
 
-    // 二维码按钮
-    this->btnQR->getParent()->registerClickAction([this](...) {
-        auto dialog = new ShareDialog();
-#if defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
-        dialog->open(episodeResult.link, seasonInfo.season_title + " " + episodeResult.title, seasonInfo.evaluate,
-                     seasonInfo.cover);
-#else
-        dialog->open(this->episodeResult.link);
-#endif
+    // 稍后观看按钮
+    this->btnLater->getParent()->registerClickAction([this](...) {
+        if (!DialogHelper::checkLogin()) return true;
+        this->toggleWatchLater(this->episodeResult.aid);
         return true;
     });
 
@@ -200,7 +194,12 @@ void PlayerSeasonActivity::onSeasonVideoInfo(const bilibili::SeasonResultWrapper
     this->labelAgree->setText(wiliwili::num2w(result.stat.likes));
     this->labelCoin->setText(wiliwili::num2w(result.stat.coins));
     this->labelFavorite->setText(wiliwili::num2w(result.stat.favorite));
-    this->labelQR->setText("wiliwili/player/share"_i18n);
+    this->labelLater->setText("wiliwili/player/later"_i18n);
+
+    // 请求稍后观看状态
+    if (this->episodeResult.aid != 0) {
+        this->requestWatchLaterStatus(this->episodeResult.aid);
+    }
 
     // videoView bangumi custom setting
     video->setBangumiCustomSetting(result.season_title, result.season_id);

@@ -42,6 +42,7 @@ public:
     void onRequestCommentError(const std::string& error) override;
     void onVideoOnlineCount(const bilibili::VideoOnlineTotal& count) override;
     void onVideoRelationInfo(const bilibili::VideoRelation& result) override;
+    void onWatchLaterStatus(bool inWatchLater) override;
     void onHighlightProgress(const bilibili::VideoHighlightProgress& result) override;
 
     // 初始化设置 播放界面通用内容
@@ -49,6 +50,9 @@ public:
 
     // 设置 点赞、收藏、投币 三个按钮的样式
     void setRelationButton(bool liked, bool coin, bool favorite);
+
+    // 设置稍后观看按钮的样式
+    void setWatchLaterButton(bool inWatchLater);
 
     // 展示收藏列表对话框
     void showCollectionDialog(uint64_t id, int videoType);
@@ -121,11 +125,11 @@ protected:
     BRLS_BIND(SVGImage, btnAgree, "video/btn/agree");
     BRLS_BIND(SVGImage, btnCoin, "video/btn/coin");
     BRLS_BIND(SVGImage, btnFavorite, "video/btn/favorite");
-    BRLS_BIND(SVGImage, btnQR, "video/btn/qr");
+    BRLS_BIND(SVGImage, btnLater, "video/btn/later");
     BRLS_BIND(brls::Label, labelAgree, "video/label/agree");
     BRLS_BIND(brls::Label, labelCoin, "video/label/coin");
     BRLS_BIND(brls::Label, labelFavorite, "video/label/favorite");
-    BRLS_BIND(brls::Label, labelQR, "video/label/qr");
+    BRLS_BIND(brls::Label, labelLater, "video/label/later");
 
     // 监控mpv事件
     MPVEvent::Subscription eventSubscribeID;
