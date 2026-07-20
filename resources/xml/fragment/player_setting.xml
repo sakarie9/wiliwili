@@ -90,6 +90,9 @@
                             id="setting/auto/skip"/>
 
                     <brls:BooleanCell
+                            id="setting/video/sponsor_block"/>
+
+                    <brls:BooleanCell
                             id="setting/auto/exit"/>
 
                     <brls:BooleanCell

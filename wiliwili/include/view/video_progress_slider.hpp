@@ -9,12 +9,20 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include <borealis/core/box.hpp>
 
 namespace brls {
 class Rectangle;
 }
 class SVGImage;
+
+/// A range on the progress bar (e.g. for sponsor block segments)
+struct SponsorRange {
+    double start = 0;  // 0.0 - 1.0
+    double end   = 0;  // 0.0 - 1.0
+    std::string uuid;
+};
 
 class VideoProgressSlider : public brls::Box {
 public:
@@ -56,6 +64,13 @@ public:
 
     const std::vector<float>& getClipPoint();
 
+    // SponsorBlock: add a highlighted range on the slider
+    void addSponsorRange(const SponsorRange& range);
+    // SponsorBlock: clear all sponsor ranges
+    void clearSponsorRanges();
+    // SponsorBlock: get all sponsor ranges
+    const std::vector<SponsorRange>& getSponsorRanges() const;
+
     void setProgressUpdater(const std::function<float(float)>& updater) { progressUpdater = updater; }
 
     void setManuallyMode();
@@ -72,6 +87,7 @@ private:
     brls::Event<> progressCancelEvent;
 
     std::vector<float> clipPointList;
+    std::vector<SponsorRange> sponsorRanges;
 
     float progress             = 1;
     bool pointerSelected       = false;

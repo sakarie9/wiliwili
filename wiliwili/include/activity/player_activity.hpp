@@ -43,6 +43,7 @@ public:
     void onVideoOnlineCount(const bilibili::VideoOnlineTotal& count) override;
     void onVideoRelationInfo(const bilibili::VideoRelation& result) override;
     void onHighlightProgress(const bilibili::VideoHighlightProgress& result) override;
+    void onSponsorBlockSegments(const bilibili::SponsorBlockSegmentList& result) override;
 
     // 初始化设置 播放界面通用内容
     void setCommonData();

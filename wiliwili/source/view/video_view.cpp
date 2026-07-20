@@ -521,6 +521,37 @@ VideoView::VideoView() {
             osdSlider->addClipPoint(*(float*)data);
         } else if (event == VideoView::HIGHLIGHT_INFO) {
             this->setHighlightProgress(*(VideoHighlightData*)data);
+        } else if (event == VideoView::SPONSOR_BLOCK_INFO) {
+            auto* segments = (bilibili::SponsorBlockSegmentList*)data;
+            brls::Logger::debug("[SponsorBlock] VideoView received {} segments", segments->size());
+            for (auto& seg : *segments) {
+                brls::Logger::debug("[SponsorBlock]   seg uuid={} [{}, {}]",
+                       seg.UUID, seg.segment[0], seg.segment[1]);
+            }
+            sponsorBlockSegments = *segments;
+            sponsorBlockSkipped.clear();
+            sponsorBlockDataReady = true;
+            this->applySponsorRanges();
+            // Immediately check if we're inside a segment (data may arrive after playback started)
+            if (SPONSOR_BLOCK_ENABLED && mpvCore->isValid()) {
+                double currentTime = mpvCore->playback_time;
+                brls::Logger::debug("[SponsorBlock] checking current time={} against {} segments",
+                       currentTime, sponsorBlockSegments.size());
+                for (auto& seg : sponsorBlockSegments) {
+                    bool inside = currentTime >= seg.segment[0] && currentTime < seg.segment[1];
+                    brls::Logger::debug("[SponsorBlock]   check: time={} in [{}, {}]? {}",
+                           currentTime, seg.segment[0], seg.segment[1], inside ? "YES" : "no");
+                    if (inside) {
+                        sponsorBlockSkipped.insert(seg.UUID);
+                        mpvCore->seek(seg.segment[1]);
+                        this->showHint(fmt::format("跳过广告: {:.0f}s → {:.0f}s",
+                            seg.segment[0], seg.segment[1]));
+                        brls::Logger::info("SponsorBlock: immediate skip {} ({:.0f}s-{:.0f}s)",
+                            seg.UUID, seg.segment[0], seg.segment[1]);
+                        break;
+                    }
+                }
+            }
         } else if (event == VideoView::REPLAY) {
             // 显示重播按钮
             showReplay = true;
@@ -1197,6 +1228,24 @@ void VideoView::setHighlightProgress(const VideoHighlightData& data) {
     this->highlightData = data;
 }
 
+void VideoView::applySponsorRanges() {
+    osdSlider->clearSponsorRanges();
+    double duration = getRealDuration();
+    brls::Logger::debug("[SponsorBlock] applySponsorRanges: duration={}, ready={}, segments={}",
+           duration, sponsorBlockDataReady, sponsorBlockSegments.size());
+    if (duration > 0 && sponsorBlockDataReady) {
+        for (auto& seg : sponsorBlockSegments) {
+            SponsorRange range;
+            range.start = (float)(seg.segment[0] / duration);
+            range.end   = (float)(seg.segment[1] / duration);
+            range.uuid  = seg.UUID;
+            brls::Logger::debug("[SponsorBlock]   range: seg=[{}, {}] range=[{}, {}] (duration={})",
+                   seg.segment[0], seg.segment[1], range.start, range.end, duration);
+            osdSlider->addSponsorRange(range);
+        }
+    }
+}
+
 void VideoView::showHint(const std::string& value) {
     brls::Logger::debug("Video hint: {}", value);
     this->hintLabel->setText(value);
@@ -1586,10 +1635,34 @@ void VideoView::registerMpvEvent() {
             case MpvEventEnum::UPDATE_DURATION:
                 this->setDuration(wiliwili::sec2Time(getRealDuration()));
                 this->setProgress((float)mpvCore->playback_time / getRealDuration());
+                // Re-apply sponsor ranges now that duration is known
+                this->applySponsorRanges();
                 break;
             case MpvEventEnum::UPDATE_PROGRESS:
                 this->setPlaybackTime(wiliwili::sec2Time(this->mpvCore->video_progress));
                 this->setProgress((float)mpvCore->playback_time / getRealDuration());
+                // SponsorBlock auto-skip
+                if (SPONSOR_BLOCK_ENABLED && sponsorBlockDataReady && !sponsorBlockSegments.empty()) {
+                    double progress = mpvCore->playback_time;
+                    for (auto& seg : sponsorBlockSegments) {
+                        if (sponsorBlockSkipped.count(seg.UUID)) {
+                            brls::Logger::debug("[SponsorBlock] UPDATE_PROGRESS: seg={} already skipped", seg.UUID);
+                            continue;
+                        }
+                        bool inside = progress >= seg.segment[0] && progress < seg.segment[1];
+                        brls::Logger::debug("[SponsorBlock] UPDATE_PROGRESS: time={} seg=[{}, {}] inside={}",
+                               progress, seg.segment[0], seg.segment[1], inside ? "YES" : "no");
+                        if (inside) {
+                            sponsorBlockSkipped.insert(seg.UUID);
+                            double skipTo = seg.segment[1];
+                            brls::Logger::debug("[SponsorBlock] SKIP! seeking to {}", skipTo);
+                            mpvCore->seek(skipTo);
+                            this->showHint(fmt::format("跳过广告: {:.0f}s → {:.0f}s",
+                                seg.segment[0], seg.segment[1]));
+                            break;
+                        }
+                    }
+                }
                 break;
             case MpvEventEnum::VIDEO_SPEED_CHANGE:
                 if (fabs(mpvCore->video_speed - 1) < 1e-5) {
@@ -1622,6 +1695,11 @@ void VideoView::registerMpvEvent() {
             case MpvEventEnum::RESET:
                 // 重置进度条标记点
                 osdSlider->clearClipPoint();
+                // 重置SponsorBlock标记
+                osdSlider->clearSponsorRanges();
+                sponsorBlockSegments.clear();
+                sponsorBlockSkipped.clear();
+                sponsorBlockDataReady = false;
                 real_duration = 0;
                 // 重置视频快照数据
                 VideoSnapshotCore::instance().reset();

@@ -207,6 +207,14 @@ void PlayerSetting::setupCommonSetting() {
                            GA("player_setting", {{"highlight", value ? "true" : "false"}});
                        });
 
+    /// SponsorBlock 广告跳过
+    btnSponsorBlock->init("wiliwili/player/setting/common/sponsor_block"_i18n, VideoView::SPONSOR_BLOCK_ENABLED,
+                          [](bool value) {
+                              ProgramConfig::instance().setSettingItem(SettingItem::PLAYER_SPONSOR_BLOCK, value);
+                              VideoView::SPONSOR_BLOCK_ENABLED = value;
+                              GA("player_setting", {{"sponsor_block", value ? "true" : "false"}});
+                          });
+
     /// Auto Sleep
     btnSleep->setText("wiliwili/setting/app/playback/sleep"_i18n);
     updateCountdown(wiliwili::getUnixTime());

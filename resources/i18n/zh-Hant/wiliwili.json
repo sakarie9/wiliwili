@@ -392,6 +392,7 @@
         "mirror": "鏡像畫面",
         "highlight": "下方固定顯示高能進度條",
         "skip_opening_credits": "跳過片頭片尾",
+        "sponsor_block": "跳過廣告推廣片段",
         "skip_hint1": "從下一個影片開始，自動跳過片頭片尾",
         "skip_hint2": "從下一個影片開始，關閉跳過片頭片尾",
         "skip_hint3": "從下一個影片開始，使用自定義的片頭片尾",

@@ -392,6 +392,7 @@
         "mirror": "Horizontally flip",
         "highlight": "Always show hotspots",
         "skip_opening_credits": "Skip opening credits",
+        "sponsor_block": "Skip sponsored segments",
         "skip_hint1": "Automatically skip the opening credits from next video",
         "skip_hint2": "Turn off skip opening credits from next video",
         "skip_hint3": "Use custom opening credits from next video",

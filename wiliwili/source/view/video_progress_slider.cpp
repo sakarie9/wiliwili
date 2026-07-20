@@ -171,23 +171,58 @@ void VideoProgressSlider::setClipPoint(const std::vector<float>& data) { clipPoi
 
 const std::vector<float>& VideoProgressSlider::getClipPoint() { return clipPointList; }
 
+void VideoProgressSlider::addSponsorRange(const SponsorRange& range) {
+    sponsorRanges.emplace_back(range);
+}
+
+void VideoProgressSlider::clearSponsorRanges() {
+    sponsorRanges.clear();
+}
+
+const std::vector<SponsorRange>& VideoProgressSlider::getSponsorRanges() const {
+    return sponsorRanges;
+}
+
 void VideoProgressSlider::draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style,
                                brls::FrameContext* ctx) {
     if (pointerSelected) {
         buttonsProcessing();
     }
 
+    // Draw order: line → sponsor ranges → pointer (so ranges are behind the thumb)
     for (View* child : this->getChildren()) {
         if (child == this->pointer) {
-            // draw clip point before pointer
+            // Draw clip points before the pointer
             nvgBeginPath(vg);
             nvgFillColor(vg, a(nvgRGBf(1.0f, 1.0f, 1.0f)));
             for (auto& i : clipPointList) {
                 nvgCircle(vg, x + 32 + i * (width - 64), y + height / 2, 3);
             }
             nvgFill(vg);
+
+            // Draw sponsor block ranges between line and pointer
+            if (!sponsorRanges.empty()) {
+                float paddingLeft = pointer->getWidth() / 2;
+                float sliderWidth = width - pointer->getWidth();
+                float sliderY     = y + height / 2;
+
+                nvgBeginPath(vg);
+                for (auto& r : sponsorRanges) {
+                    float sx = x + paddingLeft + (float)r.start * sliderWidth;
+                    float ex = x + paddingLeft + (float)r.end * sliderWidth;
+                    if (ex - sx < 2.0f) ex = sx + 2.0f;
+                    nvgRect(vg, sx, sliderY - 3.0f, ex - sx, 6.0f);
+                }
+                nvgFillColor(vg, nvgRGBAf(0.0f, 0.831f, 0.0f, 0.35f));
+                nvgFill(vg);
+            }
+
+            // Draw the pointer (thumb) on top
+            child->frame(ctx);
+        } else {
+            // Draw non-pointer children (line, lineEmpty) first
+            child->frame(ctx);
         }
-        child->frame(ctx);
     }
 }
 
