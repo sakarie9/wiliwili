@@ -191,6 +191,7 @@ std::unordered_map<SettingItem, ProgramOption> ProgramConfig::SETTING_MAP = {
     {SettingItem::PLAYER_BOTTOM_BAR, {"player_bottom_bar", {}, {}, 1}},
     {SettingItem::PLAYER_HIGHLIGHT_BAR, {"player_highlight_bar", {}, {}, 0}},
     {SettingItem::PLAYER_SKIP_OPENING_CREDITS, {"player_skip_opening_credits", {}, {}, 1}},
+    {SettingItem::PLAYER_SPONSOR_BLOCK, {"player_sponsor_block", {}, {}, 1}},
     {SettingItem::PLAYER_LOW_QUALITY, {"player_low_quality", {}, {}, 1}},
 #if defined(IOS) || defined(__PSV__) || defined(__SWITCH__)
     {SettingItem::PLAYER_HWDEC, {"player_hwdec", {}, {}, 1}},
@@ -633,6 +634,9 @@ void ProgramConfig::load() {
 
     // 是否自动跳过片头片尾
     BasePlayerActivity::PLAYER_SKIP_OPENING_CREDITS = getBoolOption(SettingItem::PLAYER_SKIP_OPENING_CREDITS);
+
+    // SponsorBlock 广告跳过
+    VideoView::SPONSOR_BLOCK_ENABLED = getBoolOption(SettingItem::PLAYER_SPONSOR_BLOCK);
 
     // 初始化是否固定显示底部进度条
     VideoView::BOTTOM_BAR = getBoolOption(SettingItem::PLAYER_BOTTOM_BAR);

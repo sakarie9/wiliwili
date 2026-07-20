@@ -296,6 +296,8 @@ void VideoDetail::requestVideoUrl(const std::string& bvid, uint64_t cid, bool re
     this->requestHighlightProgress(cid);
     // 请求视频快照（缩略图）
     this->requestVideoSnapshot(bvid, cid);
+    // 请求 SponsorBlock 广告跳过片段
+    this->requestSponsorBlockSegments(bvid);
 }
 
 /// 获取番剧地址
@@ -333,6 +335,8 @@ void VideoDetail::requestSeasonVideoUrl(const std::string& bvid, uint64_t cid, b
     this->requestHighlightProgress(cid);
     // 请求视频快照（缩略图）
     this->requestVideoSnapshot(bvid, cid);
+    // 请求 SponsorBlock 广告跳过片段
+    this->requestSponsorBlockSegments(bvid);
 }
 
 /// 获取投屏地址
@@ -783,6 +787,29 @@ void VideoDetail::requestHighlightProgress(uint64_t cid) {
             ASYNC_RELEASE
             brls::Logger::error("HighlightProgress: {}", error);
             this->onHighlightProgress(bilibili::VideoHighlightProgress{});
+        });
+}
+
+void VideoDetail::requestSponsorBlockSegments(const std::string& bvid) {
+    brls::Logger::debug("请求SponsorBlock广告跳过片段：bvid: {}", bvid);
+    ASYNC_RETAIN
+    BILI::get_sponsor_block_segments(
+        bvid,
+        [ASYNC_TOKEN, bvid](const bilibili::SponsorBlockSegmentList& result) {
+            brls::Logger::debug("[SponsorBlock] presenter got {} segments for bvid={}", result.size(), bvid);
+            for (auto& seg : result) {
+                brls::Logger::debug("[SponsorBlock]   seg uuid={} [{}, {}]",
+                       seg.UUID, seg.segment[0], seg.segment[1]);
+            }
+            brls::sync([ASYNC_TOKEN, result]() {
+                ASYNC_RELEASE
+                this->onSponsorBlockSegments(result);
+            });
+        },
+        [ASYNC_TOKEN](BILI_ERR) {
+            ASYNC_RELEASE
+            brls::Logger::error("SponsorBlock: {}", error);
+            this->onSponsorBlockSegments({});
         });
 }
 

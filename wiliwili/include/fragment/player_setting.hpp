@@ -81,6 +81,7 @@ private:
     BRLS_BIND(brls::BooleanCell, btnHighlight, "setting/video/highlight");
     BRLS_BIND(brls::DetailCell, btnSleep, "setting/sleep");
     BRLS_BIND(brls::BooleanCell, btnSkip, "setting/auto/skip");
+    BRLS_BIND(brls::BooleanCell, btnSponsorBlock, "setting/video/sponsor_block");
 
     // equalizer setting
     BRLS_BIND(brls::RadioCell, btnEqualizerReset, "setting/equalizer/reset");

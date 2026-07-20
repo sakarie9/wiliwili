@@ -49,6 +49,10 @@ class VideoEpisodeRelation;     // 番剧的某一集的点赞收藏情况
 class VideoUrlResult;           // 视频播放地址
 class SeasonUrlResult;          // 番剧播放地址
 class VideoHighlightProgress;   // 视频高能进度条
+class SponsorBlockSegment;
+typedef std::vector<SponsorBlockSegment> SponsorBlockSegmentList;
+class SponsorBlockVideoEntry;
+typedef std::vector<SponsorBlockVideoEntry> SponsorBlockVideoEntryList;
 class VideoSnapshotData;        // 视频快照（缩略图）
 class VideoDetailPage;
 typedef std::vector<VideoDetailPage> VideoDetailPageListResult;  // 视频分P列表 （视频详情API可以直接获取分P列表）
@@ -497,6 +501,11 @@ public:
     static void get_highlight_progress(uint64_t cid,
                                        const std::function<void(VideoHighlightProgress)>& callback = nullptr,
                                        const ErrorCallback& error                                  = nullptr);
+
+    /// 获取SponsorBlock广告跳过片段
+    static void get_sponsor_block_segments(const std::string& bvid,
+                                           const std::function<void(SponsorBlockSegmentList)>& callback = nullptr,
+                                           const ErrorCallback& error                                   = nullptr);
 
     /// 视频页 获取快照（缩略图）
     static void get_video_snapshot(const std::string& bvid, uint64_t cid,

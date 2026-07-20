@@ -393,6 +393,7 @@
         "mirror": "수평으로 뒤집기",
         "highlight": "항상 핫스팟 표시",
         "skip_opening_credits": "오프닝 크레딧 건너뛰기",
+        "sponsor_block": "광고 세그먼트 건너뛰기",
         "skip_hint1": "다음 동영상의 오프닝 크레딧을 자동으로 건너뜀",
         "skip_hint2": "다음 비디오에서 오프닝 크레딧 건너뛰기 끄기",
         "skip_hint3": "다음 비디오의 커스텀 오프닝 크레딧을 사용",

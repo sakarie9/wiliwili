@@ -393,6 +393,7 @@
         "mirror": "Rispecchia orizzontalmente",
         "highlight": "Mostra sempre i punti salienti",
         "skip_opening_credits": "Salta titoli di testa",
+        "sponsor_block": "Salta segmenti sponsorizzati",
         "skip_hint1": "Salta automaticamente i titoli di testa dal prossimo video",
         "skip_hint2": "Disattiva il salto dei titoli di testa dal prossimo video",
         "skip_hint3": "Usa titoli di testa personalizzati dal prossimo video",

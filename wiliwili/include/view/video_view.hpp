@@ -4,11 +4,13 @@
 
 #pragma once
 
+#include <set>
 #include <borealis/core/bind.hpp>
 #include <borealis/core/box.hpp>
 #include <borealis/core/application.hpp>
 
 #include "utils/event_helper.hpp"
+#include "bilibili/result/sponsor_block_result.h"
 
 namespace brls {
 class Label;
@@ -251,6 +253,7 @@ public:
     inline static const std::string CLIP_INFO      = "CLIP_INFO";
     inline static const std::string HIGHLIGHT_INFO = "HIGHLIGHT_INFO";
     inline static const std::string REAL_DURATION  = "REAL_DURATION";
+    inline static const std::string SPONSOR_BLOCK_INFO = "SPONSOR_BLOCK_INFO";
 
     // 用于指定 lastPlayedPosition 的值
     // 若无历史记录，则为 -1，若不使用历史记录的值，则为 -2
@@ -271,6 +274,9 @@ public:
 
     // Highlight progress bar
     inline static bool HIGHLIGHT_PROGRESS_BAR = false;
+
+    // SponsorBlock: auto-skip sponsored segments
+    inline static bool SPONSOR_BLOCK_ENABLED = true;
 
     inline static int OSD_SHOW_TIME = 5000;
 
@@ -363,6 +369,11 @@ private:
     // 缩略图预览的显示状态
     bool showThumbnailPreview  = false;  // 是否显示缩略图预览
 
+    // SponsorBlock data
+    bilibili::SponsorBlockSegmentList sponsorBlockSegments;
+    std::set<std::string> sponsorBlockSkipped;  // UUIDs of already-skipped segments
+    bool sponsorBlockDataReady = false;
+
     MPVCore* mpvCore;
     brls::Rect oldRect = brls::Rect(-1, -1, -1, -1);
 
@@ -394,6 +405,9 @@ private:
 
     /// 绘制高能进度条
     void drawHighlightProgress(NVGcontext* vg, float x, float y, float width, float alpha);
+
+    /// 应用SponsorBlock范围标记到进度条
+    void applySponsorRanges();
 
     void _setTvControlMode(bool state);
 
