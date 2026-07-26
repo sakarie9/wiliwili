@@ -679,6 +679,22 @@ void VideoView::draw(NVGcontext* vg, float x, float y, float width, float height
         nvgBeginPath(vg);
         nvgRect(vg, x, y + height - 2, width * progress, 2);
         nvgFill(vg);
+
+        // Draw sponsor block ranges on the bottom bar (visible during fullscreen)
+        if (SPONSOR_BLOCK_ENABLED && sponsorBlockDataReady && !sponsorBlockSegments.empty()) {
+            float duration = getRealDuration();
+            if (duration > 0) {
+                nvgBeginPath(vg);
+                for (auto& seg : sponsorBlockSegments) {
+                    float sx = x + (float)(seg.segment[0] / duration) * width;
+                    float ex = x + (float)(seg.segment[1] / duration) * width;
+                    if (ex - sx < 2.0f) ex = sx + 2.0f;
+                    nvgRect(vg, sx, y + height - 2, ex - sx, 2);
+                }
+                nvgFillColor(vg, nvgRGBAf(0.0f, 0.831f, 0.0f, 0.35f));
+                nvgFill(vg);
+            }
+        }
     }
 
     // draw danmaku
@@ -1311,6 +1327,11 @@ void VideoView::setFullScreen(bool fs) {
         video->osdSlider->setClipPoint(osdSlider->getClipPoint());
         video->refreshToggleIcon();
         video->setHighlightProgress(highlightData);
+        // Copy SponsorBlock data to the new fullscreen VideoView
+        video->sponsorBlockSegments    = this->sponsorBlockSegments;
+        video->sponsorBlockSkipped     = this->sponsorBlockSkipped;
+        video->sponsorBlockDataReady   = this->sponsorBlockDataReady;
+        video->applySponsorRanges();
         if (this->isLiveMode) video->setLiveMode();
         video->setCustomToggleAction(customToggleAction);
         DanmakuCore::instance().refresh();
@@ -1386,6 +1407,11 @@ void VideoView::setFullScreen(bool fs) {
                         video->setBangumiCustomSetting(this->bangumiTitle, this->bangumiSeasonId);
                         video->refreshToggleIcon();
                         video->setHighlightProgress(highlightData);
+                        // Restore SponsorBlock data when exiting fullscreen
+                        video->sponsorBlockSegments  = this->sponsorBlockSegments;
+                        video->sponsorBlockSkipped   = this->sponsorBlockSkipped;
+                        video->sponsorBlockDataReady = this->sponsorBlockDataReady;
+                        video->applySponsorRanges();
                         video->refreshDanmakuIcon();
                         video->setQuality(this->getQuality());
                         video->videoSpeed->setText(this->videoSpeed->getFullText());
