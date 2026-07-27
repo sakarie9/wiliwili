@@ -534,23 +534,7 @@ VideoView::VideoView() {
             this->applySponsorRanges();
             // Immediately check if we're inside a segment (data may arrive after playback started)
             if (SPONSOR_BLOCK_ENABLED && mpvCore->isValid()) {
-                double currentTime = mpvCore->playback_time;
-                brls::Logger::debug("[SponsorBlock] checking current time={} against {} segments",
-                       currentTime, sponsorBlockSegments.size());
-                for (auto& seg : sponsorBlockSegments) {
-                    bool inside = currentTime >= seg.segment[0] && currentTime < seg.segment[1];
-                    brls::Logger::debug("[SponsorBlock]   check: time={} in [{}, {}]? {}",
-                           currentTime, seg.segment[0], seg.segment[1], inside ? "YES" : "no");
-                    if (inside) {
-                        sponsorBlockSkipped.insert(seg.UUID);
-                        mpvCore->seek(seg.segment[1]);
-                        this->showHint(fmt::format("跳过广告: {:.0f}s → {:.0f}s",
-                            seg.segment[0], seg.segment[1]));
-                        brls::Logger::info("SponsorBlock: immediate skip {} ({:.0f}s-{:.0f}s)",
-                            seg.UUID, seg.segment[0], seg.segment[1]);
-                        break;
-                    }
-                }
+                this->checkAndSkipSponsorBlock();
             }
         } else if (event == VideoView::REPLAY) {
             // 显示重播按钮
@@ -1262,6 +1246,32 @@ void VideoView::applySponsorRanges() {
     }
 }
 
+void VideoView::checkAndSkipSponsorBlock() {
+    if (!sponsorBlockDataReady || sponsorBlockSegments.empty()) return;
+    double currentTime = mpvCore->playback_time;
+    for (auto& seg : sponsorBlockSegments) {
+        if (sponsorBlockSkipped.count(seg.UUID)) continue;
+        bool inside = currentTime >= seg.segment[0] && currentTime < seg.segment[1];
+        brls::Logger::debug("[SponsorBlock] check: time={} in [{}, {}]? {}",
+               currentTime, seg.segment[0], seg.segment[1], inside ? "YES" : "no");
+        if (inside) {
+            sponsorBlockSkipped.insert(seg.UUID);
+            if (this->isFullscreen() && !this->isOSDShown()) {
+                mpvCore->seek(seg.segment[1]);
+                brls::Logger::info("SponsorBlock: silent skip {} ({:.0f}s-{:.0f}s)",
+                    seg.UUID, seg.segment[0], seg.segment[1]);
+            } else {
+                mpvCore->seek(seg.segment[1]);
+                this->showHint(fmt::format("跳过广告: {:.0f}s → {:.0f}s",
+                    seg.segment[0], seg.segment[1]));
+                brls::Logger::info("SponsorBlock: skip {} ({:.0f}s-{:.0f}s)",
+                    seg.UUID, seg.segment[0], seg.segment[1]);
+            }
+            break;
+        }
+    }
+}
+
 void VideoView::showHint(const std::string& value) {
     brls::Logger::debug("Video hint: {}", value);
     this->hintLabel->setText(value);
@@ -1669,25 +1679,7 @@ void VideoView::registerMpvEvent() {
                 this->setProgress((float)mpvCore->playback_time / getRealDuration());
                 // SponsorBlock auto-skip
                 if (SPONSOR_BLOCK_ENABLED && sponsorBlockDataReady && !sponsorBlockSegments.empty()) {
-                    double progress = mpvCore->playback_time;
-                    for (auto& seg : sponsorBlockSegments) {
-                        if (sponsorBlockSkipped.count(seg.UUID)) {
-                            brls::Logger::debug("[SponsorBlock] UPDATE_PROGRESS: seg={} already skipped", seg.UUID);
-                            continue;
-                        }
-                        bool inside = progress >= seg.segment[0] && progress < seg.segment[1];
-                        brls::Logger::debug("[SponsorBlock] UPDATE_PROGRESS: time={} seg=[{}, {}] inside={}",
-                               progress, seg.segment[0], seg.segment[1], inside ? "YES" : "no");
-                        if (inside) {
-                            sponsorBlockSkipped.insert(seg.UUID);
-                            double skipTo = seg.segment[1];
-                            brls::Logger::debug("[SponsorBlock] SKIP! seeking to {}", skipTo);
-                            mpvCore->seek(skipTo);
-                            this->showHint(fmt::format("跳过广告: {:.0f}s → {:.0f}s",
-                                seg.segment[0], seg.segment[1]));
-                            break;
-                        }
-                    }
+                    this->checkAndSkipSponsorBlock();
                 }
                 break;
             case MpvEventEnum::VIDEO_SPEED_CHANGE:
