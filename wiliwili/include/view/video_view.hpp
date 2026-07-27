@@ -409,6 +409,9 @@ private:
     /// 应用SponsorBlock范围标记到进度条
     void applySponsorRanges();
 
+    /// 检查当前位置并跳过赞助商片段
+    void checkAndSkipSponsorBlock();
+
     void _setTvControlMode(bool state);
 
     float getRealDuration();
