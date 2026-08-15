@@ -528,7 +528,7 @@ public:
     std::vector<ClipInfo> clip_info_list{};  // 片头片尾数据
     int clipOpen = -1, clipEnd = -1;         // 手动添加的数据，用来更方便地读取片头片尾
 
-    /// 屏蔽 PCDN 类型的视频链接 (MCDN / IP:Port / szbdyd)，优先使用备份链接中的优质 CDN
+    /// 屏蔽 PCDN 类型的视频链接 (MCDN / 非 80/443 端口)，优先使用备份链接中的优质 CDN
     void blockPCDN();
 };
 inline void from_json(const nlohmann::json& nlohmann_json_j, VideoUrlResult& nlohmann_json_t) {
@@ -556,17 +556,16 @@ inline void from_json(const nlohmann::json& nlohmann_json_j, VideoUrlResult& nlo
 
 /// 判断是否为 PCDN 类型的视频链接
 /// 1. MCDN: 域名包含 mcdn (如 xxx.mcdn.bilivideo.cn / mcdn.bilivideo.com)
-/// 2. IP:Port 型: 形如 http://1.14.5.14:19198/v1/resource/*
+/// 2. 带端口号(非 80/443)的链接: 如 http://1.14.5.14:19198/v1/resource/* (IP:Port 型等)
 inline bool isPCDNUrl(const std::string& url) {
     if (url.empty()) return false;
     // 去掉协议前缀 (http:// / https:// 等)
     size_t scheme = url.find("://");
     size_t start  = scheme == std::string::npos ? 0 : scheme + 3;
-    // 分离 authority 与 path
+    // 分离 authority
     size_t slash     = url.find('/', start);
     size_t authEnd   = slash == std::string::npos ? url.size() : slash;
     std::string auth = url.substr(start, authEnd - start);
-    std::string path = slash == std::string::npos ? "" : url.substr(slash);
     // 分离 host 与 port
     std::string host = auth, port;
     size_t colon     = auth.rfind(':');
@@ -576,25 +575,8 @@ inline bool isPCDNUrl(const std::string& url) {
     }
     // 1. MCDN 型
     if (host.find("mcdn") != std::string::npos) return true;
-    // 2. IP:Port 型: IPv4 + 端口 + /v1/resource 路径
-    if (!port.empty() && path.rfind("/v1/resource", 0) == 0) {
-        bool ipv4 = true;
-        int segs  = 0;
-        size_t segStart = 0;
-        for (size_t i = 0; i <= host.size(); i++) {
-            if (i == host.size() || host[i] == '.') {
-                if (i == segStart) { ipv4 = false; break; }
-                for (size_t j = segStart; j < i; j++) {
-                    if (host[j] < '0' || host[j] > '9') { ipv4 = false; break; }
-                }
-                if (!ipv4) break;
-                segs++;
-                segStart = i + 1;
-                if (segs > 4) { ipv4 = false; break; }
-            }
-        }
-        if (ipv4 && segs == 4) return true;
-    }
+    // 2. 带端口号(非 80/443)的链接视为 PCDN
+    if (!port.empty() && port != "80" && port != "443") return true;
     return false;
 }
 

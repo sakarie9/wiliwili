@@ -518,7 +518,7 @@ void BasePlayerActivity::setCommentMode() {
 void BasePlayerActivity::onVideoPlayUrl(bilibili::VideoUrlResult result) {
     brls::Logger::debug("onVideoPlayUrl quality: {}", result.quality);
 
-    // 屏蔽 PCDN 类型的视频链接 (MCDN / IP:Port / szbdyd)
+    // 屏蔽 PCDN 类型的视频链接 (MCDN / 非 80/443 端口)
     if (ProgramConfig::instance().getBoolOption(SettingItem::BLOCK_PCDN)) {
         result.blockPCDN();
         brls::Logger::debug("onVideoPlayUrl: blocked PCDN urls");

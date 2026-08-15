@@ -102,7 +102,7 @@ enum class SettingItem {
     HTTP_TIMEOUT,
     HTTP_CONNECTION_TIMEOUT,
     HTTP_DNS_CACHE_TIMEOUT,
-    BLOCK_PCDN, // 屏蔽 PCDN 类型的视频链接 (MCDN / IP:Port / szbdyd)
+    BLOCK_PCDN, // 屏蔽 PCDN 类型的视频链接 (MCDN / 非 80/443 端口)
     UP_FILTER,
     LIVE_DANMAKU_FILTER_LEVEL,
     LIVE_SIDEBAR_DANMAKU_COUNT, // 直播间侧边栏弹幕数量上限
