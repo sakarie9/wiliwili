@@ -515,8 +515,14 @@ void BasePlayerActivity::setCommentMode() {
     requestVideoComment(std::to_string(this->getAid()), 0, getVideoCommentMode() == 3 ? 2 : 3);
 }
 
-void BasePlayerActivity::onVideoPlayUrl(const bilibili::VideoUrlResult& result) {
+void BasePlayerActivity::onVideoPlayUrl(bilibili::VideoUrlResult result) {
     brls::Logger::debug("onVideoPlayUrl quality: {}", result.quality);
+
+    // 屏蔽 PCDN 类型的视频链接 (MCDN / IP:Port / szbdyd)
+    if (ProgramConfig::instance().getBoolOption(SettingItem::BLOCK_PCDN)) {
+        result.blockPCDN();
+        brls::Logger::debug("onVideoPlayUrl: blocked PCDN urls");
+    }
 
     if (result.accept_quality.empty() || result.accept_description.empty()) {
         // 通常是返回了其他报错信息, 比如验证码

@@ -41,7 +41,8 @@
         "header": "Rete",
         "tls": "Verifica TLS",
         "proxy": "Proxy",
-        "proxy_hint": "esempio: http://127.0.0.1:7890"
+        "proxy_hint": "esempio: http://127.0.0.1:7890",
+        "pcdn": "Blocca PCDN"
       },
       "ui": {
         "header": "UI",

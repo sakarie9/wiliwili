@@ -41,7 +41,8 @@
         "header": "Network",
         "tls": "TLS verify",
         "proxy": "Proxy",
-        "proxy_hint": "example: http://127.0.0.1:7890"
+        "proxy_hint": "example: http://127.0.0.1:7890",
+        "pcdn": "Block PCDN"
       },
       "ui": {
         "header": "UI",

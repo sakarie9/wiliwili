@@ -221,6 +221,7 @@ std::unordered_map<SettingItem, ProgramOption> ProgramConfig::SETTING_MAP = {
 #else
       1}},
 #endif
+    {SettingItem::BLOCK_PCDN, {"block_pcdn", {}, {}, 0}},
 
     /// number
 #if defined(__PSV__)

@@ -678,6 +678,11 @@ void SettingActivity::onContentAvailable() {
         },
         "wiliwili/setting/app/network/proxy_hint"_i18n, "wiliwili/setting/app/network/proxy_hint"_i18n, 64);
 
+    /// 屏蔽 PCDN
+    btnPcdn->init("wiliwili/setting/app/network/pcdn"_i18n, conf.getBoolOption(SettingItem::BLOCK_PCDN), [](bool data) {
+        ProgramConfig::instance().setSettingItem(SettingItem::BLOCK_PCDN, data);
+    });
+
 /// Hardware decode
 #if defined(PS4) || defined(__PSV__) && defined(BOREALIS_USE_OPENGL)
     btnHWDEC->setVisibility(brls::Visibility::GONE);
