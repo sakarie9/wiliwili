@@ -41,7 +41,8 @@
         "header": "网络设置",
         "tls": "TLS 验证",
         "proxy": "网络代理",
-        "proxy_hint": "示例: http://127.0.0.1:7890"
+        "proxy_hint": "示例: http://127.0.0.1:7890",
+        "pcdn": "屏蔽 PCDN"
       },
       "ui": {
         "header": "界面设置",

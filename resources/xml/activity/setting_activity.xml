@@ -280,6 +280,9 @@
                             <brls:InputCell
                                     id="setting/network/input"/>
 
+                            <brls:BooleanCell
+                                    id="setting/network/pcdn"/>
+
                         </brls:Box>
                     </brls:Box>
                 </brls:ScrollingFrame>

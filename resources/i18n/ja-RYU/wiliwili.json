@@ -41,7 +41,8 @@
         "header": "ネットワーク",
         "tls": "TLS検証",
         "proxy": "プロキシ",
-        "proxy_hint": "例：http://127.0.0.1:7890"
+        "proxy_hint": "例：http://127.0.0.1:7890",
+        "pcdn": "PCDN をブロック"
       },
       "ui": {
         "header": "UI",

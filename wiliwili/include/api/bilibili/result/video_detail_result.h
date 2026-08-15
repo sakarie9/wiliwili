@@ -527,6 +527,9 @@ public:
     Dash dash;
     std::vector<ClipInfo> clip_info_list{};  // 片头片尾数据
     int clipOpen = -1, clipEnd = -1;         // 手动添加的数据，用来更方便地读取片头片尾
+
+    /// 屏蔽 PCDN 类型的视频链接 (MCDN / IP:Port / szbdyd)，优先使用备份链接中的优质 CDN
+    void blockPCDN();
 };
 inline void from_json(const nlohmann::json& nlohmann_json_j, VideoUrlResult& nlohmann_json_t) {
     if (nlohmann_json_j.contains("durl") && !nlohmann_json_j.at("durl").is_null()) {
@@ -549,6 +552,83 @@ inline void from_json(const nlohmann::json& nlohmann_json_j, VideoUrlResult& nlo
     }
     NLOHMANN_JSON_EXPAND(
         NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM, quality, timelength, accept_description, accept_quality));
+}
+
+/// 判断是否为 PCDN 类型的视频链接
+/// 1. MCDN: 域名包含 mcdn (如 xxx.mcdn.bilivideo.cn / mcdn.bilivideo.com)
+/// 2. IP:Port 型: 形如 http://1.14.5.14:19198/v1/resource/*
+inline bool isPCDNUrl(const std::string& url) {
+    if (url.empty()) return false;
+    // 去掉协议前缀 (http:// / https:// 等)
+    size_t scheme = url.find("://");
+    size_t start  = scheme == std::string::npos ? 0 : scheme + 3;
+    // 分离 authority 与 path
+    size_t slash     = url.find('/', start);
+    size_t authEnd   = slash == std::string::npos ? url.size() : slash;
+    std::string auth = url.substr(start, authEnd - start);
+    std::string path = slash == std::string::npos ? "" : url.substr(slash);
+    // 分离 host 与 port
+    std::string host = auth, port;
+    size_t colon     = auth.rfind(':');
+    if (colon != std::string::npos) {
+        host = auth.substr(0, colon);
+        port = auth.substr(colon + 1);
+    }
+    // 1. MCDN 型
+    if (host.find("mcdn") != std::string::npos) return true;
+    // 2. IP:Port 型: IPv4 + 端口 + /v1/resource 路径
+    if (!port.empty() && path.rfind("/v1/resource", 0) == 0) {
+        bool ipv4 = true;
+        int segs  = 0;
+        size_t segStart = 0;
+        for (size_t i = 0; i <= host.size(); i++) {
+            if (i == host.size() || host[i] == '.') {
+                if (i == segStart) { ipv4 = false; break; }
+                for (size_t j = segStart; j < i; j++) {
+                    if (host[j] < '0' || host[j] > '9') { ipv4 = false; break; }
+                }
+                if (!ipv4) break;
+                segs++;
+                segStart = i + 1;
+                if (segs > 4) { ipv4 = false; break; }
+            }
+        }
+        if (ipv4 && segs == 4) return true;
+    }
+    return false;
+}
+
+/// 过滤单个媒体流的链接:
+/// - 主链接正常时, 仅移除备份链接中的 PCDN
+/// - 主链接是 PCDN 时, 用备份中第一个非 PCDN 链接替代主链接
+/// - 全部都是 PCDN 时保留原链接, 避免完全无法播放
+inline void removePCDNUrls(std::string& base_url, std::vector<std::string>& backup_url) {
+    if (!isPCDNUrl(base_url)) {
+        std::vector<std::string> good;
+        for (const auto& u : backup_url) {
+            if (!isPCDNUrl(u)) good.push_back(u);
+        }
+        backup_url = std::move(good);
+        return;
+    }
+    std::vector<std::string> good;
+    for (const auto& u : backup_url) {
+        if (isPCDNUrl(u)) continue;
+        if (isPCDNUrl(base_url)) {
+            base_url = u;  // 用第一个非 PCDN 备份链接替换主链接
+        } else {
+            good.push_back(u);
+        }
+    }
+    backup_url = std::move(good);
+}
+
+inline void VideoUrlResult::blockPCDN() {
+    for (auto& i : dash.video) removePCDNUrls(i.base_url, i.backup_url);
+    for (auto& i : dash.audio) removePCDNUrls(i.base_url, i.backup_url);
+    for (auto& i : dash.dolby_audio) removePCDNUrls(i.base_url, i.backup_url);
+    removePCDNUrls(dash.flac_audio.base_url, dash.flac_audio.backup_url);
+    for (auto& i : durl) removePCDNUrls(i.url, i.backup_url);
 }
 
 class SeasonUrlResult {

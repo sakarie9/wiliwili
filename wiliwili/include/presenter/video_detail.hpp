@@ -27,7 +27,7 @@ public:
     virtual void onSeasonSeriesInfo(const bilibili::SeasonSeries& result) {}
     virtual void onSeasonRecommend(const bilibili::SeasonRecommendWrapper& result) {}
     virtual void onVideoPageListInfo(const bilibili::VideoDetailPageListResult& result) {}
-    virtual void onVideoPlayUrl(const bilibili::VideoUrlResult& result) {}
+    virtual void onVideoPlayUrl(bilibili::VideoUrlResult result) {}
     virtual void onCastPlayUrl(const bilibili::VideoUrlResult& result) {}
     virtual void onUploadedVideos(const bilibili::UserUploadedVideoResultWrapper& result) {}
     virtual void onDanmakuInfo() {}
